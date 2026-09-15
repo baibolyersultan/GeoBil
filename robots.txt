@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://baibolyersultan.github.io/GeoBil/sitemap.xml

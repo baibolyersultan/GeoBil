@@ -117,6 +117,7 @@ function cleanExamText(t){return String(t??'').replace(/\s*\(Тарау:.*?\)\s*
 ENT_QB_RAW.forEach(q=>{q.q=cleanExamText(q.q);if(Array.isArray(q.items))q.items=q.items.map(cleanExamText);if(q.e)q.e=cleanExamText(q.e)});
 const ENT_QB=ENT_QB_RAW.slice().sort((a,b)=>{const rank={single:1,context:2,match:3,multi:4};return rank[a.type]-rank[b.type]||a.variant-b.variant||a.num-b.num;});
 function renderEntVariants(){const box=$('entVariants');box.innerHTML='';for(let v=1;v<=10;v++){const qs=ENT_QB.filter(x=>x.variant===v);const b=document.createElement('button');b.className='variant';b.innerHTML=`<span class="tag">40 сұрақ • 50 балл</span><h3>${v}-нұсқа</h3><p class="muted">25 бір жауап • 26–30 контекст • 31–35 сәйкестендіру • 36–40 көп жауапты</p>`;b.onclick=()=>startEnt(v);box.appendChild(b);}$('entCount').textContent='10 нұсқа • 400 тапсырма';}
+function restoreEntQuiz(){const old=$('entBody');if(!old)return;if(old.querySelector('#entQ')&&old.querySelector('#entAnswers')&&old.querySelector('#entTimer'))return;old.outerHTML=QUIZ_SHELL;}
 function entHome(){clearInterval(timer);ENT_STATE=null;restoreEntQuiz();hideAll();$('entView').classList.remove('hidden');$('entVariants').classList.remove('hidden');$('entBody').classList.add('hidden');nav('navEnt');renderEntVariants();}
 function startEnt(v){
   clearInterval(timer);
@@ -130,8 +131,8 @@ function updateEntTimer(){const t=ENT_STATE?.time||0;const m=Math.floor(t/60),s=
 function entAnswer(i){const q=ENT_STATE.qs[ENT_STATE.idx];q.user=i;renderEntQ();}
 function entToggle(i){const q=ENT_STATE.qs[ENT_STATE.idx];q.user=Array.isArray(q.user)?q.user:[];const k=q.user.indexOf(i);if(k>=0)q.user.splice(k,1);else if(q.user.length<3)q.user.push(i);renderEntQ();}
 function entMatch(i,j){const q=ENT_STATE.qs[ENT_STATE.idx];q.user=Array.isArray(q.user)?q.user:[];q.user[i]=j;renderEntQ();}
-function entJump(i){if(!ENT_STATE||ENT_STATE.finished)return;ENT_STATE.idx=Math.max(0,Math.min(39,i));renderEntQ();window.scrollTo({top:0,behavior:'smooth'});}
-function entNext(){if(!ENT_STATE)return;if(ENT_STATE.idx<39){ENT_STATE.idx++;renderEntQ();window.scrollTo({top:0,behavior:'smooth'});}else finishEnt();}
+function entJump(i){if(!ENT_STATE||ENT_STATE.finished)return;const y=window.scrollY;ENT_STATE.idx=Math.max(0,Math.min(39,i));renderEntQ();window.scrollTo(0,y);}
+function entNext(){if(!ENT_STATE)return;if(ENT_STATE.idx<39){const y=window.scrollY;ENT_STATE.idx++;renderEntQ();window.scrollTo(0,y);}else finishEnt();}
 function entPrev(){if(ENT_STATE.idx>0){ENT_STATE.idx--;renderEntQ();window.scrollTo({top:0,behavior:'smooth'});}}
 function entPoints(q){
   if(q.user===null)return 0;
@@ -158,7 +159,7 @@ function finishEnt(){
   if(!ENT_STATE||ENT_STATE.finished)return;clearInterval(timer);ENT_STATE.finished=true;
   const total=ENT_STATE.qs.reduce((a,q)=>a+entPoints(q),0),answered=ENT_STATE.qs.filter(q=>q.user!==null&&(q.type!=='match'||(Array.isArray(q.user)&&q.user.some(x=>x!=null&&x>=0)))).length;
   const elapsed=Math.round((Date.now()-ENT_STATE.started)/1000);const mistakes=entMistakeList();
-  ENT_STATE.result={total,elapsed,mistakes,answered};let cs=stats();cs.tests++;cs.questions+=40;cs.correct+=total;cs.history=Array.isArray(cs.history)?cs.history:[];cs.history.push({title:`ҰБТ ${v}-нұсқа`,correct:total,questions:40,date:new Date().toISOString()});if(cs.history.length>2000)cs.history=cs.history.slice(-2000);saveState();
+  ENT_STATE.result={total,elapsed,mistakes,answered};let cs=stats();cs.tests++;cs.questions+=40;cs.correct+=total;cs.history=Array.isArray(cs.history)?cs.history:[];cs.history.push({title:`ҰБТ ${ENT_STATE.v}-нұсқа`,correct:total,questions:40,date:new Date().toISOString()});if(cs.history.length>2000)cs.history=cs.history.slice(-2000);saveState();
   hideAll();$('entView').classList.remove('hidden');$('entVariants').classList.remove('hidden');$('entBody').classList.remove('hidden');
   renderEntResult();
 }
